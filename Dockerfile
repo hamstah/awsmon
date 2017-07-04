@@ -1,7 +1,14 @@
-FROM alpine:latest 
-MAINTAINER Allen Chen(a3linux@gmail.com)
+FROM golang:alpine as builder
 
-RUN apk --update add bash openssl 
-COPY go-aws-mon /usr/bin/go-aws-mon 
+ADD ./vendor /go/src/github.com/cirocosta/go-aws-mon/vendor
+ADD ./awsmon /go/src/github.com/cirocosta/go-aws-mon/awsmon
 
-CMD /usr/bin/go-aws-mon --mem-util --mem-used --mem-avail --disk-space-util --disk-inode-util --disk-space-used --disk-space-avail --disk-path=/
+WORKDIR /go/src/github.com/cirocosta/go-aws-mon/awsmon
+RUN set -ex && \
+  CGO_ENABLED=0 go build -v -a -ldflags '-extldflags "-static"' && \
+  mv ./awsmon /usr/bin/awsmon
+
+FROM busybox
+COPY --from=builder /usr/bin/awsmon /awsmon
+
+CMD [ "awsmon" ]

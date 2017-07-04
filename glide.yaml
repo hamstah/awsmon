@@ -1,0 +1,12 @@
+package: github.com/cirocosta/go-aws-mon
+import:
+- package: github.com/aws/aws-sdk-go
+  version: v1.10.6
+  subpackages:
+  - aws
+  - aws/awserr
+  - aws/awsutil
+  - aws/session
+  - service/autoscaling
+  - service/cloudwatch
+- package: github.com/guillermo/go.procmeminfo
