@@ -12,10 +12,10 @@ type DiskSample struct {
 	InodesUtilization float64
 }
 
-// GetDiskSample retrieves a sample about disk utilization
+// TakeDiskSample retrieves a sample about disk utilization
 // of a mounted filesystem denoted by the first parameter
 // by looking at the results from the `statfs` syscall.
-func DiskSpace(path string) (sample DiskSample, err error) {
+func TakeDiskSample(path string) (sample DiskSample, err error) {
 	var fsInfo = syscall.Statfs_t{}
 
 	err = syscall.Statfs(path, &fsInfo)

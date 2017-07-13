@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"time"
+  "os"
+  "os/signal"
 
 	"github.com/alexflint/go-arg"
 )
@@ -18,29 +20,42 @@ var args struct {
 func main() {
 	args.Memory = true
 	args.Disk = []string{"/"}
-	args.Interval = 1 * time.Minute
+	args.Interval = 30 * time.Second
 	args.Namespace = "System/Linux"
 	args.Aws = true
 
 	arg.MustParse(&args)
-  ticker := time.NewTicker(1 * time.Second)
+  ticker := time.NewTicker(args.Interval)
+  defer ticker.Stop()
+
+  closeChan := make(chan os.Signal, 1)
+  signal.Notify(closeChan, os.Interrupt)
+
   go func () {
     for {
       select {
       case <- ticker.C:
+        diskSample, err := TakeDiskSample("/")
+        if err != nil {
+          log.Println(err)
+          continue
+        }
+
+        log.Printf("%+v\n", diskSample)
+
+
         sample, err := TakeMemorySample()
         if err != nil {
           log.Println(err)
           continue
         }
 
-        log.Println(sample)
+        log.Printf("%+v\n", sample)
       }
     }
   }()
 
-  time.Sleep(5 * time.Second)
-  ticker.Stop()
-
 	log.Printf("starting sampling - %+v", args)
+  <-closeChan
+  ticker.Stop()
 }
