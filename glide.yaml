@@ -11,3 +11,5 @@ import:
   - service/cloudwatch
 - package: github.com/guillermo/go.procmeminfo
 - package: github.com/alexflint/go-arg
+- package: github.com/pkg/errors
+  version: v0.8.0

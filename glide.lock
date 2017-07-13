@@ -1,5 +1,5 @@
-hash: e4fe70514cc82e55d629b89efb9dfdc5032857bf645a4fdc1bb51e1217071e22
-updated: 2017-07-13T10:08:45.270867585-03:00
+hash: 0f7bf97df86889e4825ab75147e853f4cc5481e399f73e018e51164c771d9858
+updated: 2017-07-13T11:38:45.096906598-03:00
 imports:
 - name: github.com/alexflint/go-arg
   version: cef6506c97e5731da728c374ff3523e481026423
@@ -39,4 +39,6 @@ imports:
   version: be4355a9fb0e5340ebee5b05aafe85948eaccd1b
 - name: github.com/jmespath/go-jmespath
   version: bd40a432e4c76585ef6b72d3fd96fb9b6dc7b68d
+- name: github.com/pkg/errors
+  version: 645ef00459ed84a119197bfb8d8205042c6df63d
 testImports: []
