@@ -14,9 +14,9 @@ var (
 	memInfo = &procmeminfo.MemInfo{}
 )
 
-// GetMemorySample updates the /proc/meminfo sampler and returns
+// TakeMemorySample updates the /proc/meminfo sampler and returns
 // a struct with the desired metrics to be consumed.
-func GetMemorySample() (sample MemorySample, err error) {
+func TakeMemorySample() (sample MemorySample, err error) {
 	err = memInfo.Update()
 	if err != nil {
 		err = errors.Wrapf(err,
@@ -25,11 +25,16 @@ func GetMemorySample() (sample MemorySample, err error) {
 	}
 
 	used := float64(memInfo.Used())
-	total := float64(memInfo.Available())
-	swapUsed := float64(memInfo.Available())
-	swapTotal := float64(memInfo.Available())
+	total := float64(memInfo.Total())
+	swapUsed := float64(memInfo.Swap())
+	swapTotal := float64((*memInfo)["SwapTotal"])
+
+  if swapTotal == 0 {
+    sample.SwapUtilization = 0
+  } else {
+    sample.SwapUtilization = Round(swapUsed / swapTotal * 100)
+  }
 
 	sample.MemoryUtilization = Round(used / total * 100)
-	sample.SwapUtilization = Round(swapUsed / swapTotal * 100)
 	return
 }

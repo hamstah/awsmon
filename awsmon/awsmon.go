@@ -23,20 +23,24 @@ func main() {
 	args.Aws = true
 
 	arg.MustParse(&args)
+  ticker := time.NewTicker(1 * time.Second)
+  go func () {
+    for {
+      select {
+      case <- ticker.C:
+        sample, err := TakeMemorySample()
+        if err != nil {
+          log.Println(err)
+          continue
+        }
 
-	ticker := time.NewTimer(args.Duration)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				// do
-			case <-quit:
-				ticker.Stop()
-				return
-			}
-		}
-	}()
+        log.Println(sample)
+      }
+    }
+  }()
+
+  time.Sleep(5 * time.Second)
+  ticker.Stop()
 
 	log.Printf("starting sampling - %+v", args)
 }
