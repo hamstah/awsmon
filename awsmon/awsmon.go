@@ -24,5 +24,19 @@ func main() {
 
 	arg.MustParse(&args)
 
+	ticker := time.NewTimer(args.Duration)
+	quit := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				// do
+			case <-quit:
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	log.Printf("starting sampling - %+v", args)
 }
