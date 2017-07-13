@@ -1,6 +1,10 @@
-hash: 3d7d0bab7ce666c204fa63b02d4029c51c94c725eaf5ff464c54e8cc5b7ccf87
-updated: 2017-07-03T21:04:50.444138258-03:00
+hash: e4fe70514cc82e55d629b89efb9dfdc5032857bf645a4fdc1bb51e1217071e22
+updated: 2017-07-13T10:08:45.270867585-03:00
 imports:
+- name: github.com/alexflint/go-arg
+  version: cef6506c97e5731da728c374ff3523e481026423
+- name: github.com/alexflint/go-scalar
+  version: 45e5d6cd8605faef82fda2bacc59e734a0b6f1f0
 - name: github.com/aws/aws-sdk-go
   version: a5a7f553e106c0b1dcbfbdaeb8774592fcc1a68a
   subpackages:

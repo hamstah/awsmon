@@ -10,3 +10,4 @@ import:
   - service/autoscaling
   - service/cloudwatch
 - package: github.com/guillermo/go.procmeminfo
+- package: github.com/alexflint/go-arg

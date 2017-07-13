@@ -2,22 +2,37 @@ package main
 
 import (
 	"syscall"
+
+	"github.com/pkg/errors"
 )
 
-// Disk Space total and free bytes available for path like "df command"
-func DiskSpace(path string) (diskspaceUtil float64, diskspaceUsed, diskspaceAvail int, diskinodesUtil float64, err error) {
-	s := syscall.Statfs_t{}
-	err = syscall.Statfs(path, &s)
-	if err != nil {
-		return 0, 0, 0, 0, err
-	}
-	_total := int(s.Bsize) * int(s.Blocks)
-	_avail := int(s.Bsize) * int(s.Bavail)
-	_used := _total - _avail
-	_diskspaceUtil := (float64(_used) / float64(_total)) * 100
+// DiskSample represents the sample of
+type DiskSample struct {
+	DiskUtilization   float64
+	InodesUtilization float64
+}
 
-	_inodesTotal := int(s.Files)
-	_inodesFree := int(s.Ffree)
-	_inodesUtil := 100 * (1 - float64(_inodesFree)/float64(_inodesTotal))
-	return Round(_diskspaceUtil), _used, _avail, Round(_inodesUtil), err
+// GetDiskSample retrieves a sample about disk utilization
+// of a mounted filesystem denoted by the first parameter
+// by looking at the results from the `statfs` syscall.
+func DiskSpace(path string) (sample DiskSample, err error) {
+	var fsInfo = syscall.Statfs_t{}
+
+	err = syscall.Statfs(path, &fsInfo)
+	if err != nil {
+		err = errors.Wrapf(err,
+			"Couldn't retrieve FS info for path %s", path)
+		return
+	}
+
+	diskTotal := int(fsInfo.Bsize) * int(fsInfo.Blocks)
+	diskAvail := int(fsInfo.Bsize) * int(fsInfo.Bavail)
+	diskUsed := diskTotal - diskAvail
+
+	inodesTotal := int(fsInfo.Files)
+	inodesFree := int(fsInfo.Ffree)
+
+	sample.InodesUtilization = Round(100 * (1 - float64(inodesFree)/float64(inodesTotal)))
+	sample.DiskUtilization = Round((float64(diskUsed) / float64(diskTotal)) * 100)
+	return
 }

@@ -1,18 +1,35 @@
 package main
 
-import "github.com/guillermo/go.procmeminfo"
+import (
+	"github.com/guillermo/go.procmeminfo"
+	"github.com/pkg/errors"
+)
 
-// Memory Usage(percent of used, bytes of Used, Avaliable and Total)
-func memoryUsage() (memUtil, memUsed, memAvail, swapUtil, swapUsed float64, err error) {
-	meminfo := &procmeminfo.MemInfo{}
-	meminfo.Update()
+type MemorySample struct {
+	MemoryUtilization float64
+	SwapUtilization   float64
+}
 
-	_memUsed := float64(meminfo.Used())
-	_memAvail := float64(meminfo.Available())
-	_memTotal := float64(meminfo.Total())
-	_memUtil := (_memUsed / _memTotal) * 100
-	_swapUtil := float64(meminfo.Swap())
-	_swapUsed := float64((*meminfo)["SwapCached"])
+var (
+	memInfo = &procmeminfo.MemInfo{}
+)
 
-	return Round(_memUtil), _memUsed, _memAvail, Round(_swapUtil), _swapUsed, err
+// GetMemorySample updates the /proc/meminfo sampler and returns
+// a struct with the desired metrics to be consumed.
+func GetMemorySample() (sample MemorySample, err error) {
+	err = memInfo.Update()
+	if err != nil {
+		err = errors.Wrapf(err,
+			"Couldn't fetch memory sample from /proc/memInfo")
+		return
+	}
+
+	used := float64(memInfo.Used())
+	total := float64(memInfo.Available())
+	swapUsed := float64(memInfo.Available())
+	swapTotal := float64(memInfo.Available())
+
+	sample.MemoryUtilization = Round(used / total * 100)
+	sample.SwapUtilization = Round(swapUsed / swapTotal * 100)
+	return
 }
