@@ -4,8 +4,9 @@
 *.so
 *.swp
 
-go-aws-mon 
+awsmon
 tags
 
 # Folders
 godeps/*
+dist/
