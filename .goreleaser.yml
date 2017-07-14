@@ -1,6 +1,5 @@
 builds:
   - main: ./awsmon/awsmon.go
-    binary: awsmon
     goos:
       - darwin
       - linux

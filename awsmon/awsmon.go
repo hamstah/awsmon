@@ -15,6 +15,7 @@ type CliArguments struct {
 	Disk      []string      `arg:"-d,separate,help:retrieve disk samples from disk locations"`
 	Namespace string        `arg:"-n,help:cloudwatch metric namespace"`
 	Aws       bool          `arg:"-a,help:whether or not the instance is running in aws"`
+	Debug     bool          `arg:"env,help:toggles debugging mode"`
 }
 
 var (
@@ -24,6 +25,7 @@ var (
 		Interval:  30 * time.Second,
 		Namespace: "System/Linux",
 		Aws:       true,
+		Debug:     false,
 	}
 )
 
@@ -39,9 +41,12 @@ func main() {
 	signal.Notify(closeChan, os.Interrupt)
 
 	if args.Aws {
-		reporter, err = NewReporter("cw")
+		reporter, err = NewReporter("cw", CloudWatchReporterConfig{
+			Debug:     args.Debug,
+			Namespace: args.Namespace,
+		})
 	} else {
-		reporter, err = NewReporter("stdout")
+		reporter, err = NewReporter("stdout", struct{}{})
 	}
 	if err != nil {
 		log.Println(err)
@@ -56,17 +61,17 @@ func main() {
 				if err != nil {
 					log.Println(err)
 					continue
+				} else {
+					reporter.SendStat(NewDiskUtilizationStat(&diskSample))
 				}
-
-				reporter.SendStat(NewDiskUtilizationStat(&diskSample))
 
 				memorySample, err := TakeMemorySample()
 				if err != nil {
 					log.Println(err)
 					continue
+				} else {
+					reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
 				}
-
-				reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
 			}
 		}
 	}()

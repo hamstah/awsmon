@@ -18,15 +18,33 @@ type CloudWatchReporter struct {
 	cw         *cloudwatch.CloudWatch
 	dimensions []*cloudwatch.Dimension
 
+	namespace        string
 	autoscalingGroup string
 	instanceId       string
 	region           string
 }
 
-func NewCloudWatchReporter() (reporter CloudWatchReporter, err error) {
-	sess, err := session.NewSession(&aws.Config{
-		LogLevel: aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors),
-	})
+type CloudWatchReporterConfig struct {
+	Debug     bool
+	Namespace string
+}
+
+var (
+	awsConfig = &aws.Config{}
+)
+
+func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchReporter, err error) {
+	if cfg.Namespace == "" {
+		err = errors.Errorf("A namespace must be provided")
+		return
+	}
+
+	if cfg.Debug {
+		awsConfig.LogLevel =
+			aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors)
+	}
+
+	sess, err := session.NewSession(awsConfig)
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't create AWS session.")
@@ -50,13 +68,14 @@ func NewCloudWatchReporter() (reporter CloudWatchReporter, err error) {
 		Value: aws.String(reporter.autoscalingGroup),
 	}
 
+	reporter.namespace = cfg.Namespace
 	reporter.cw = cloudwatch.New(sess)
 	reporter.dimensions = []*cloudwatch.Dimension{
 		&instanceNameDimension, &instanceAsgDimension,
 	}
 
 	log.Println("cw: reporter created")
-	log.Println("cw: instanceId=%s, region=%s, asg=%s",
+	log.Printf("cw: instanceId=%s, region=%s, asg=%s\n",
 		reporter.instanceId, reporter.region,
 		reporter.autoscalingGroup)
 
@@ -99,7 +118,7 @@ func (reporter *CloudWatchReporter) fetchInstanceMetadata(sess *session.Session)
 }
 
 func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
-	log.Println("cw: sending stat %+v", stat)
+	log.Printf("cw: sending stat %+v\n", stat)
 
 	var datum = cloudwatch.MetricDatum{
 		MetricName: aws.String(stat.Name),
@@ -110,7 +129,7 @@ func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
 	}
 
 	var input = cloudwatch.PutMetricDataInput{
-		Namespace: aws.String("System/Linux"),
+		Namespace: aws.String(reporter.namespace),
 		MetricData: []*cloudwatch.MetricDatum{
 			&datum,
 		},
