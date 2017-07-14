@@ -10,7 +10,8 @@ import (
 )
 
 type CloudWatchReporter struct {
-	cw *cloudwatch.CloudWatch
+	cw         *cloudwatch.CloudWatch
+	dimensions []*cloudwatch.Dimension
 
 	autoscalingGroup string
 	instanceId       string
@@ -27,10 +28,25 @@ func NewCloudWatchReporter() (reporter CloudWatchReporter, err error) {
 
 	err = reporter.fetchInstanceMetadata(sess)
 	if err != nil {
+		err = errors.Wrapf(err,
+			"Couldn't fetch instance metadata")
 		return
 	}
 
+	var instanceNameDimension = cloudwatch.Dimension{
+		Name:  aws.String("InstanceName"),
+		Value: aws.String(reporter.instanceId),
+	}
+
+	var instanceAsgDimension = cloudwatch.Dimension{
+		Name:  aws.String("AutoScalingGroup"),
+		Value: aws.String(reporter.autoscalingGroup),
+	}
+
 	reporter.cw = cloudwatch.New(sess)
+	reporter.dimensions = []*cloudwatch.Dimension{
+		&instanceNameDimension, &instanceAsgDimension,
+	}
 	return
 }
 
@@ -70,19 +86,12 @@ func (reporter *CloudWatchReporter) fetchInstanceMetadata(sess *session.Session)
 }
 
 func (reporter *CloudWatchReporter) SendStat(stat Stat) (err error) {
-	var instanceNameDimension = cloudwatch.Dimension{
-		Name:  aws.String("InstanceName"),
-		Value: aws.String("blabla"),
-	}
-
 	var datum = cloudwatch.MetricDatum{
 		MetricName: aws.String(stat.Name),
 		Timestamp:  aws.Time(stat.When),
 		Unit:       aws.String(stat.Unit),
-		Dimensions: []*cloudwatch.Dimension{
-			&instanceNameDimension,
-		},
-		Value: aws.Float64(stat.Value),
+		Dimensions: reporter.dimensions,
+		Value:      aws.Float64(stat.Value),
 	}
 
 	var input = cloudwatch.PutMetricDataInput{
