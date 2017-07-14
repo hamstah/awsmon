@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
@@ -22,7 +24,9 @@ type CloudWatchReporter struct {
 }
 
 func NewCloudWatchReporter() (reporter CloudWatchReporter, err error) {
-	sess, err := session.NewSession()
+	sess, err := session.NewSession(&aws.Config{
+		LogLevel: aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors),
+	})
 	if err != nil {
 		err = errors.Wrapf(err,
 			"Couldn't create AWS session.")
@@ -50,6 +54,12 @@ func NewCloudWatchReporter() (reporter CloudWatchReporter, err error) {
 	reporter.dimensions = []*cloudwatch.Dimension{
 		&instanceNameDimension, &instanceAsgDimension,
 	}
+
+	log.Println("cw: reporter created")
+	log.Println("cw: instanceId=%s, region=%s, asg=%s",
+		reporter.instanceId, reporter.region,
+		reporter.autoscalingGroup)
+
 	return
 }
 
@@ -81,12 +91,16 @@ func (reporter *CloudWatchReporter) fetchInstanceMetadata(sess *session.Session)
 	if len(resp.AutoScalingInstances) != 0 {
 		reporter.autoscalingGroup = *resp.
 			AutoScalingInstances[0].AutoScalingGroupName
+	} else {
+		reporter.autoscalingGroup = "none"
 	}
 
 	return
 }
 
 func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
+	log.Println("cw: sending stat %+v", stat)
+
 	var datum = cloudwatch.MetricDatum{
 		MetricName: aws.String(stat.Name),
 		Timestamp:  aws.Time(stat.When),
