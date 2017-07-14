@@ -28,12 +28,25 @@ var (
 )
 
 func main() {
+	var reporter Reporter
+	var err error
+
 	arg.MustParse(&args)
 	ticker := time.NewTicker(args.Interval)
 	defer ticker.Stop()
 
 	closeChan := make(chan os.Signal, 1)
 	signal.Notify(closeChan, os.Interrupt)
+
+	if args.Aws {
+		reporter, err = NewReporter("cw")
+	} else {
+		reporter, err = NewReporter("stdout")
+	}
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
 	go func() {
 		for {
@@ -45,15 +58,15 @@ func main() {
 					continue
 				}
 
-				log.Printf("%+v\n", diskSample)
+				reporter.SendStat(NewDiskUtilizationStat(&diskSample))
 
-				sample, err := TakeMemorySample()
+				memorySample, err := TakeMemorySample()
 				if err != nil {
 					log.Println(err)
 					continue
 				}
 
-				log.Printf("%+v\n", sample)
+				reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
 			}
 		}
 	}()

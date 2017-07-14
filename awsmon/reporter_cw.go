@@ -85,7 +85,7 @@ func (reporter *CloudWatchReporter) fetchInstanceMetadata(sess *session.Session)
 	return
 }
 
-func (reporter *CloudWatchReporter) SendStat(stat Stat) (err error) {
+func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
 	var datum = cloudwatch.MetricDatum{
 		MetricName: aws.String(stat.Name),
 		Timestamp:  aws.Time(stat.When),
