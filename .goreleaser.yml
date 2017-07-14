@@ -1,5 +1,7 @@
+project_name: awsmon
 builds:
-  - main: ./awsmon/awsmon.go
+    env:
+      - 'CGO_ENABLED=0'
     goos:
       - darwin
       - linux

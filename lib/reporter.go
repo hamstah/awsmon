@@ -1,4 +1,4 @@
-package main
+package lib
 
 // Reporter is responsible for reporting
 // stats to somewhere.

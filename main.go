@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/alexflint/go-arg"
+
+	. "github.com/cirocosta/awsmon/lib"
 )
 
 type CliArguments struct {
