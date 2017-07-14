@@ -42,7 +42,7 @@ readonly BINARY_DESTINATION="/usr/local/bin/awsmon"
 mkdir -p /tmp/awsmon
 curl -o /tmp/awsmon/awsmon.tar.gz -L $URL
 tar xzfv /tmp/awsmon/awsmon.tar.gz -C /tmp/awsmon
-sudo mv /tmp/awsmon/awsmon /usr/local/bin/awsmon
+sudo mv /tmp/awsmon/awsmon $BINARY_DESTINATION
 ```
 
 
