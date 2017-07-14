@@ -1,3 +1,5 @@
+VERSION := $(shell cat ./VERSION)
+
 image:
 	docker build -t cirocosta/awsmon .
 
@@ -9,7 +11,8 @@ fmt:
 	cd lib && gofmt -s -w .
 
 release:
-	goreleaser --snapshot
+	git tag -a $(VERSION) -m "Release"
+	git push origin $(VERSION)
+	goreleaser
 
-
-.PHONY: install fmt image
+.PHONY: install fmt image release
