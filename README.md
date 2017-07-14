@@ -1,33 +1,30 @@
-AWS CloudWatch Monitoring Program
-=========================================================
+<h1 align="center">awsmon 📡  </h1>
 
-## Put Linux System metrics to AWS CloudWatch
+<h5 align="center">Sends memory and disk statistics back to CloudWatch</h5>
 
-### Memory
-* Memory Utilization -  Memory usage in percent
-* Memory Used - Used memory in bytes
-* Memory Available - Available memory in bytes
-* Swap Utilization - Swap usage in percent
-* Swap Used - Swap used in bytes
+<br/>
 
-### Disk
-* Disk Space Utilization - Disk space usage in percent
-* Disk Space Used - Disk space used in bytes
-* Disk Space Available - Disk space available in bytes
-* Linux partition inode usage - Disk parttion inodes usage in percent
+EC2 instances doesn't have memory and disk statistics by default. This project aims at providing a single static binary that gives you such capabilities.
 
-## Usage
+> Fork of [go-aws-mon](https://github.com/a3linux/go-aws-mon/)
 
-* You need to config you aws credential before run the program
-* Run the program as following for full metrics push
 
 ```
-go-aws-mon --namespace=<NAMESPACE> --mem-util --mem-used --mem-avail --swap-util --swap-used  --disk-space-util --disk-inode-util --disk-space-used --disk-space-avail --disk-path=PATH
+Usage: awsmon [--interval INTERVAL] [--memory] [--disk DISK] [--namespace NAMESPACE] [--aws]
+
+Options:
+  --interval INTERVAL, -i INTERVAL
+                         interval between samples [default: 30s]
+  --memory, -m           retrieve memory samples [default: true]
+  --disk DISK, -d DISK   retrieve disk samples from disk locations [default: [/]]
+  --namespace NAMESPACE, -n NAMESPACE
+                         cloudwatch metric namespace [default: System/Linux]
+  --aws, -a              whether or not the instance is running in aws [default: true]
+  --help, -h             display this help and exit
 ```
 
-_PATH_, multiple paths are supported by comma(,) saperate, e.x. /,/var,/home
 
-* By default, the CloudWatch namespace is "Linux/System" and Memory Utilization and / Disk Utilization are always push
-* We recommend to change the bin/mon-put-instance-metric.sh to setup a cron job
+### LICENSE
 
-Allen Chen(a3linux X gmail.com)
+See `./LICENSE` (inherits from the fork).
+
