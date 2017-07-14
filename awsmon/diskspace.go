@@ -2,6 +2,7 @@ package main
 
 import (
 	"syscall"
+	"time"
 
 	"github.com/pkg/errors"
 )
@@ -10,6 +11,7 @@ import (
 type DiskSample struct {
 	DiskUtilization   float64
 	InodesUtilization float64
+	When              time.Time
 }
 
 // TakeDiskSample retrieves a sample about disk utilization
@@ -34,5 +36,6 @@ func TakeDiskSample(path string) (sample DiskSample, err error) {
 
 	sample.InodesUtilization = Round(100 * (1 - float64(inodesFree)/float64(inodesTotal)))
 	sample.DiskUtilization = Round((float64(diskUsed) / float64(diskTotal)) * 100)
+	sample.When = time.Now()
 	return
 }
