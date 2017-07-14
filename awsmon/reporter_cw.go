@@ -9,6 +9,9 @@ import (
 	"github.com/pkg/errors"
 )
 
+// CloudWatchReporter implements the Reporter interface
+// to provide the connection between samples generated
+// by the machine and CloudWatch.
 type CloudWatchReporter struct {
 	cw         *cloudwatch.CloudWatch
 	dimensions []*cloudwatch.Dimension
@@ -75,13 +78,11 @@ func (reporter *CloudWatchReporter) fetchInstanceMetadata(sess *session.Session)
 		return
 	}
 
-	if len(resp.AutoScalingInstances) == 0 {
-		err = errors.New(
-			"No autoscaling group found")
-		return
+	if len(resp.AutoScalingInstances) != 0 {
+		reporter.autoscalingGroup = *resp.
+			AutoScalingInstances[0].AutoScalingGroupName
 	}
 
-	reporter.autoscalingGroup = *resp.AutoScalingInstances[0].AutoScalingGroupName
 	return
 }
 
