@@ -4,9 +4,7 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/pkg/errors"
 )
@@ -21,12 +19,22 @@ type CloudWatchReporter struct {
 	namespace        string
 	autoscalingGroup string
 	instanceId       string
+	instanceType     string
 	region           string
 }
 
+// CloudWatchReporterConfig represents all the configuration
+// needed for initializing the cloudwatch reporter.
+// Note.: AutoScalingGroup is optional.
 type CloudWatchReporterConfig struct {
-	Debug     bool
-	Namespace string
+	Debug bool
+
+	Namespace    string
+	InstanceId   string
+	InstanceType string
+	Region       string
+
+	AutoScalingGroup string
 }
 
 var (
@@ -39,10 +47,31 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 		return
 	}
 
+	if cfg.InstanceId == "" {
+		err = errors.Errorf("An instanceId must be provided")
+		return
+	}
+
+	if cfg.InstanceType == "" {
+		err = errors.Errorf("An instanceType must be provided")
+		return
+	}
+
+	if cfg.Region == "" {
+		err = errors.Errorf("A region must be provided")
+		return
+	}
+
 	if cfg.Debug {
 		awsConfig.LogLevel =
 			aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors)
 	}
+
+	reporter.instanceId = cfg.InstanceId
+	reporter.instanceType = cfg.InstanceType
+	reporter.region = cfg.Region
+	reporter.autoscalingGroup = cfg.AutoScalingGroup
+	reporter.namespace = cfg.Namespace
 
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
@@ -51,68 +80,36 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 		return
 	}
 
-	err = reporter.fetchInstanceMetadata(sess)
-	if err != nil {
-		err = errors.Wrapf(err,
-			"Couldn't fetch instance metadata")
-		return
+	var instanceTypeDimension = cloudwatch.Dimension{
+		Name:  aws.String("InstanceType"),
+		Value: aws.String(reporter.instanceType),
 	}
 
-	var instanceNameDimension = cloudwatch.Dimension{
-		Name:  aws.String("InstanceName"),
+	var instanceIdDimension = cloudwatch.Dimension{
+		Name:  aws.String("InstanceId"),
 		Value: aws.String(reporter.instanceId),
 	}
 
 	var instanceAsgDimension = cloudwatch.Dimension{
-		Name:  aws.String("AutoScalingGroup"),
+		Name:  aws.String("AutoScalingGroupName"),
 		Value: aws.String(reporter.autoscalingGroup),
 	}
 
-	reporter.namespace = cfg.Namespace
 	reporter.cw = cloudwatch.New(sess)
 	reporter.dimensions = []*cloudwatch.Dimension{
-		&instanceNameDimension, &instanceAsgDimension,
+		&instanceIdDimension,
+		&instanceTypeDimension,
+	}
+
+	if reporter.autoscalingGroup != "" {
+		reporter.dimensions = append(
+			reporter.dimensions, &instanceAsgDimension)
 	}
 
 	log.Println("cw: reporter created")
-	log.Printf("cw: instanceId=%s, region=%s, asg=%s\n",
+	log.Printf("cw: instanceId=%s, region=%s, instanceType=%s, asg=%s\n",
 		reporter.instanceId, reporter.region,
-		reporter.autoscalingGroup)
-
-	return
-}
-
-func (reporter *CloudWatchReporter) fetchInstanceMetadata(sess *session.Session) (err error) {
-	meta := ec2metadata.New(sess)
-	asg := autoscaling.New(sess)
-
-	doc, err := meta.GetInstanceIdentityDocument()
-	if err != nil {
-		err = errors.Wrapf(err,
-			"Couldn't retrieve instance metadata")
-		return
-	}
-
-	reporter.instanceId = doc.InstanceID
-	reporter.region = doc.Region
-
-	resp, err := asg.DescribeAutoScalingInstances(&autoscaling.DescribeAutoScalingInstancesInput{
-		InstanceIds: []*string{&doc.InstanceID},
-		MaxRecords:  aws.Int64(1),
-	})
-	if err != nil {
-		err = errors.Wrapf(err,
-			"Couldn't retrieve ASG for instance %s",
-			reporter.instanceId)
-		return
-	}
-
-	if len(resp.AutoScalingInstances) != 0 {
-		reporter.autoscalingGroup = *resp.
-			AutoScalingInstances[0].AutoScalingGroupName
-	} else {
-		reporter.autoscalingGroup = "none"
-	}
+		reporter.instanceType, reporter.autoscalingGroup)
 
 	return
 }

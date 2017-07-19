@@ -11,13 +11,20 @@ import (
 	. "github.com/cirocosta/awsmon/lib"
 )
 
+// CliArguments groups all the arguments that are
+// passed by the user to `awsmon`.
 type CliArguments struct {
 	Interval  time.Duration `arg:"-i,help:interval between samples"`
 	Memory    bool          `arg:"-m,help:retrieve memory samples"`
 	Disk      []string      `arg:"-d,separate,help:retrieve disk samples from disk locations"`
 	Namespace string        `arg:"-n,help:cloudwatch metric namespace"`
-	Aws       bool          `arg:"-a,help:whether or not the instance is running in aws"`
-	Debug     bool          `arg:"env,help:toggles debugging mode"`
+
+	Debug bool `arg:"env,help:toggles debugging mode"`
+
+	Aws           bool   `arg:"-a,help:whether or not to enable AWS support"`
+	AwsAsg        string `arg:"help:autoscaling group that the instance is in"`
+	AwsInstanceId string `arg:"help:id of the instance (required if wanting AWS support)"`
+	AwsRegion     string `arg:"help:region of the instance (required if wanting AWS support)"`
 }
 
 var (
