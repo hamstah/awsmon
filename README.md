@@ -58,6 +58,27 @@ tar xzfv /tmp/awsmon/awsmon.tar.gz -C /tmp/awsmon
 sudo mv /tmp/awsmon/awsmon $BINARY_DESTINATION
 ```
 
+#### Configuration
+
+The parameters can also be statically configured via the configuration file (`--config`) that defaults to `/etc/awsmon/config.json`:
+
+```json
+{
+  "interval": 30000000000,
+  "memory": true,
+  "disk": [
+    "/"
+  ],
+  "debug": false,
+  "aws": true,
+  "aws-autoscaling-group": "",
+  "aws-instance-id": "",
+  "aws-instance-type": "",
+  "aws-region": "",
+  "aws-namespace": "System/Linux"
+}
+```
+
 
 #### Running it while instance is alive
 

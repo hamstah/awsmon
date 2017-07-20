@@ -18,7 +18,7 @@ type CliArguments struct {
 	Memory   bool          `arg:"-m,help:retrieve memory samples" json:"memory"`
 	Disk     []string      `arg:"-d,separate,help:retrieve disk samples from disk locations" json:"disk"`
 
-	Config string `arg:env,help:path to awsmon configuration file`
+	Config string `arg:env,help:path to awsmon configuration file json:"-"`
 	Debug  bool   `arg:"env,help:toggles debugging mode" json:"debug"`
 
 	Aws                 bool   `arg:"-a,help:whether or not to enable AWS support" json:"aws"`
@@ -64,6 +64,7 @@ func main() {
 
 	arg.MustParse(&args)
 	mustReadConfigFile(&args)
+	log.Println("configuration parsed %+v", args)
 
 	ticker := time.NewTicker(args.Interval)
 	defer ticker.Stop()
