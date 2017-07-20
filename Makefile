@@ -11,8 +11,8 @@ fmt:
 	cd lib && gofmt -s -w .
 
 release:
-	git tag -a $(VERSION) -m "Release"
+	git tag -a $(VERSION) -m "Release" || true
 	git push origin $(VERSION)
-	goreleaser
+	goreleaser --rm-dist
 
 .PHONY: install fmt image release
