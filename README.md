@@ -28,8 +28,6 @@ Options:
                          id of the instance (required if wanting AWS support)
   --awsinstancetype AWSINSTANCETYPE
                          type of the instance (required if wanting AWS support)
-  --awsregion AWSREGION
-                         region of the instance (required if wanting AWS support)
   --awsnamespace AWSNAMESPACE, -n AWSNAMESPACE
                          cloudwatch metric namespace [default: System/Linux]
 
@@ -97,6 +95,13 @@ RestartSec=3
 [Install]
 WantedBy=default.target
 ```
+
+
+#### AWS
+
+AWS support requires that you have already configured session support by either configuring an instance role for the EC2 instance or creating a well-formed credentials file (`~/.aws/credentials`). 
+
+If you're unsure about whether the metrics are really being succesfully sent to CloudWatch, enable debug (append `--debug` to the configuration). This will print out the AWS client logs.
 
 
 #### LICENSE

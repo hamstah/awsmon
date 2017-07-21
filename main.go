@@ -25,7 +25,6 @@ type CliArguments struct {
 	AwsAutoScalingGroup string `arg:"help:autoscaling group that the instance is in" json:"aws-autoscaling-group"`
 	AwsInstanceId       string `arg:"help:id of the instance (required if wanting AWS support)" json:"aws-instance-id"`
 	AwsInstanceType     string `arg:"help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
-	AwsRegion           string `arg:"help:region of the instance (required if wanting AWS support)" json:"aws-region"`
 	AwsNamespace        string `arg:"-n,help:cloudwatch metric namespace" json:"aws-namespace"`
 }
 
@@ -78,7 +77,6 @@ func main() {
 			Namespace:        args.AwsNamespace,
 			InstanceId:       args.AwsInstanceId,
 			InstanceType:     args.AwsInstanceType,
-			Region:           args.AwsRegion,
 			AutoScalingGroup: args.AwsAutoScalingGroup,
 		})
 	} else {

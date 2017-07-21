@@ -20,7 +20,6 @@ type CloudWatchReporter struct {
 	autoscalingGroup string
 	instanceId       string
 	instanceType     string
-	region           string
 }
 
 // CloudWatchReporterConfig represents all the configuration
@@ -32,7 +31,6 @@ type CloudWatchReporterConfig struct {
 	Namespace    string
 	InstanceId   string
 	InstanceType string
-	Region       string
 
 	AutoScalingGroup string
 }
@@ -57,11 +55,6 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 		return
 	}
 
-	if cfg.Region == "" {
-		err = errors.Errorf("A region must be provided")
-		return
-	}
-
 	if cfg.Debug {
 		awsConfig.LogLevel =
 			aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors)
@@ -69,7 +62,6 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 
 	reporter.instanceId = cfg.InstanceId
 	reporter.instanceType = cfg.InstanceType
-	reporter.region = cfg.Region
 	reporter.autoscalingGroup = cfg.AutoScalingGroup
 	reporter.namespace = cfg.Namespace
 
@@ -107,9 +99,9 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 	}
 
 	log.Println("cw: reporter created")
-	log.Printf("cw: instanceId=%s, region=%s, instanceType=%s, asg=%s\n",
-		reporter.instanceId, reporter.region,
-		reporter.instanceType, reporter.autoscalingGroup)
+	log.Printf("cw: instanceId=%s, instanceType=%s, asg=%s\n",
+		reporter.instanceId, reporter.instanceType,
+		reporter.autoscalingGroup)
 
 	return
 }
