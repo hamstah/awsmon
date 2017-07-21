@@ -72,7 +72,6 @@ The parameters can also be statically configured via the configuration file (`--
   "aws-autoscaling-group": "",
   "aws-instance-id": "",
   "aws-instance-type": "",
-  "aws-region": "",
   "aws-namespace": "System/Linux"
 }
 ```
