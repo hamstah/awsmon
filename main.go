@@ -88,7 +88,7 @@ func main() {
 		return
 	}
 
-	var disksToLookupFor = make([]string)
+	var disksToLookupFor = make([]string, 0)
 	for _, diskPath := range args.Disk {
 		finfo, err := os.Stat(diskPath)
 		if err == nil {

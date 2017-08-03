@@ -109,9 +109,9 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
 	log.Printf("cw: sending stat %+v\n", stat)
 
-	var extraDimensions = make([]*cloudwatch.Dimension)
+	var extraDimensions = make([]*cloudwatch.Dimension, 0)
 	for k, v := range stat.ExtraDimensions {
-		extraDimensions = append(ExtraDimensions, &cloudwatch.Dimension{
+		extraDimensions = append(extraDimensions, &cloudwatch.Dimension{
 			Name:  aws.String(k),
 			Value: aws.String(v),
 		})
