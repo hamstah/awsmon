@@ -30,7 +30,8 @@ Options:
                          type of the instance (required if wanting AWS support)
   --awsnamespace AWSNAMESPACE, -n AWSNAMESPACE
                          cloudwatch metric namespace [default: System/Linux]
-
+  --awsregion AWSREGION, -n AWSREGION
+                         region for sending cloudwatch metrics to
   --help, -h             display this help and exit
 ```
 

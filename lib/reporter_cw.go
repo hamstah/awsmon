@@ -28,11 +28,11 @@ type CloudWatchReporter struct {
 type CloudWatchReporterConfig struct {
 	Debug bool
 
-	Namespace    string
-	InstanceId   string
-	InstanceType string
-
 	AutoScalingGroup string
+	InstanceId       string
+	InstanceType     string
+	Namespace        string
+	Region           string
 }
 
 var (
@@ -64,6 +64,10 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 	reporter.instanceType = cfg.InstanceType
 	reporter.autoscalingGroup = cfg.AutoScalingGroup
 	reporter.namespace = cfg.Namespace
+
+	if cfg.Region != "" {
+		awsConfig.Region = aws.String(cfg.Region)
+	}
 
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
