@@ -113,7 +113,10 @@ func main() {
 						log.Printf("ERROR: errored taking disk sample - %+v\n", err)
 						continue
 					} else {
-						reporter.SendStat(NewDiskUtilizationStat(&diskSample))
+						err = reporter.SendStat(NewDiskUtilizationStat(&diskSample))
+						if err != nil {
+							log.Printf("ERROR: errored sending disk stat %+v\n", err)
+						}
 					}
 				}
 
@@ -122,7 +125,10 @@ func main() {
 					log.Println(err)
 					continue
 				} else {
-					reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
+					err = reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
+					if err != nil {
+						log.Printf("ERROR: errored sending disk stat %+v\n", err)
+					}
 				}
 			}
 		}
