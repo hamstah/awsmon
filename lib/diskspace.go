@@ -12,6 +12,7 @@ type DiskSample struct {
 	DiskUtilization   float64
 	InodesUtilization float64
 	When              time.Time
+	Path              string
 }
 
 // TakeDiskSample retrieves a sample about disk utilization
@@ -34,6 +35,7 @@ func TakeDiskSample(path string) (sample DiskSample, err error) {
 	inodesTotal := int(fsInfo.Files)
 	inodesFree := int(fsInfo.Ffree)
 
+	sample.Path = path
 	sample.InodesUtilization = Round(100 * (1 - float64(inodesFree)/float64(inodesTotal)))
 	sample.DiskUtilization = Round((float64(diskUsed) / float64(diskTotal)) * 100)
 	sample.When = time.Now()

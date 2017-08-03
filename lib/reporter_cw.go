@@ -109,11 +109,19 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
 	log.Printf("cw: sending stat %+v\n", stat)
 
+	var extraDimensions = make([]*cloudwatch.Dimension)
+	for k, v := range stat.ExtraDimensions {
+		extraDimensions = append(ExtraDimensions, &cloudwatch.Dimension{
+			Name:  aws.String(k),
+			Value: aws.String(v),
+		})
+	}
+
 	var datum = cloudwatch.MetricDatum{
 		MetricName: aws.String(stat.Name),
 		Timestamp:  aws.Time(stat.When),
 		Unit:       aws.String(stat.Unit),
-		Dimensions: reporter.dimensions,
+		Dimensions: append(reporter.dimensions, extraDimensions...),
 		Value:      aws.Float64(stat.Value),
 	}
 

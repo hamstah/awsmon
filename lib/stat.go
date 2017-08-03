@@ -5,10 +5,11 @@ import (
 )
 
 type Stat struct {
-	Name  string
-	Unit  string
-	Value float64
-	When  time.Time
+	Name            string
+	Unit            string
+	Value           float64
+	When            time.Time
+	ExtraDimensions map[string]string
 }
 
 // NewMemoryUtilizationStat generates a generic Stat
@@ -44,6 +45,9 @@ func NewDiskUtilizationStat(sample *DiskSample) Stat {
 		Unit:  "Percent",
 		When:  sample.When,
 		Value: sample.DiskUtilization,
+		ExtraDimensions: map[string]string{
+			"Path": sample.Path,
+		},
 	}
 }
 

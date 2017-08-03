@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/alexflint/go-arg"
+
 	. "github.com/cirocosta/awsmon/lib"
 )
 
@@ -87,16 +88,33 @@ func main() {
 		return
 	}
 
+	var disksToLookupFor = make([]string)
+	for _, diskPath := range args.Disk {
+		finfo, err := os.Stat(diskPath)
+		if err == nil {
+			if finfo.IsDir() {
+				disksToLookupFor = append(disksToLookupFor, diskPath)
+			}
+		} else {
+			log.Printf(
+				"WARNING: specified disk path %s "+
+					"is not a directory or couldn't be found - %+v\n",
+				diskPath, err)
+		}
+	}
+
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				diskSample, err := TakeDiskSample("/")
-				if err != nil {
-					log.Println(err)
-					continue
-				} else {
-					reporter.SendStat(NewDiskUtilizationStat(&diskSample))
+				for _, diskPath := range disksToLookupFor {
+					diskSample, err := TakeDiskSample(diskPath)
+					if err != nil {
+						log.Printf("ERROR: errored taking disk sample - %+v\n", err)
+						continue
+					} else {
+						reporter.SendStat(NewDiskUtilizationStat(&diskSample))
+					}
 				}
 
 				memorySample, err := TakeMemorySample()

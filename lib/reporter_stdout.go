@@ -11,6 +11,6 @@ func NewStdoutReporter() (reporter StdoutReporter, err error) {
 }
 
 func (reporter StdoutReporter) SendStat(stat Stat) (err error) {
-	log.Printf("%+v", stat)
+	log.Printf("SAMPLE: %+v\n", stat)
 	return
 }

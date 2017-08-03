@@ -7,8 +7,8 @@ install:
 	go install -v
 
 fmt:
-	gofmt -s -w ./main.go
-	cd lib && gofmt -s -w .
+	go fmt ./main.go
+	cd lib && go fmt
 
 release:
 	git tag -a $(VERSION) -m "Release" || true
