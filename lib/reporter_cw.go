@@ -20,6 +20,7 @@ type CloudWatchReporter struct {
 	autoscalingGroup string
 	instanceId       string
 	instanceType     string
+	aggregatedOnly   bool
 }
 
 // CloudWatchReporterConfig represents all the configuration
@@ -33,6 +34,7 @@ type CloudWatchReporterConfig struct {
 	InstanceType     string
 	Namespace        string
 	Region           string
+	AggregatedOnly   bool
 }
 
 var (
@@ -64,6 +66,7 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 	reporter.instanceType = cfg.InstanceType
 	reporter.autoscalingGroup = cfg.AutoScalingGroup
 	reporter.namespace = cfg.Namespace
+	reporter.aggregatedOnly = cfg.AggregatedOnly
 
 	if cfg.Region != "" {
 		awsConfig.Region = aws.String(cfg.Region)
@@ -76,36 +79,41 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 		return
 	}
 
-	var instanceTypeDimension = cloudwatch.Dimension{
-		Name:  aws.String("InstanceType"),
-		Value: aws.String(reporter.instanceType),
-	}
-
-	var instanceIdDimension = cloudwatch.Dimension{
-		Name:  aws.String("InstanceId"),
-		Value: aws.String(reporter.instanceId),
-	}
-
-	var instanceAsgDimension = cloudwatch.Dimension{
-		Name:  aws.String("AutoScalingGroupName"),
-		Value: aws.String(reporter.autoscalingGroup),
+	if cfg.AggregatedOnly {
+		if cfg.AutoScalingGroup == "" {
+			err = errors.Errorf("aggregatedOnly mode requires autoscaling group.")
+			return
+		}
 	}
 
 	reporter.cw = cloudwatch.New(sess)
-	reporter.dimensions = []*cloudwatch.Dimension{
-		&instanceIdDimension,
-		&instanceTypeDimension,
-	}
-
-	if reporter.autoscalingGroup != "" {
+	reporter.dimensions = make([]*cloudwatch.Dimension, 0)
+	if !cfg.AggregatedOnly {
 		reporter.dimensions = append(
-			reporter.dimensions, &instanceAsgDimension)
+			reporter.dimensions, &cloudwatch.Dimension{
+				Name:  aws.String("InstanceType"),
+				Value: aws.String(reporter.instanceType),
+			})
+
+		reporter.dimensions = append(
+			reporter.dimensions, &cloudwatch.Dimension{
+				Name:  aws.String("InstanceId"),
+				Value: aws.String(reporter.instanceId),
+			})
+
+		if reporter.autoscalingGroup != "" {
+			reporter.dimensions = append(
+				reporter.dimensions, &cloudwatch.Dimension{
+					Name:  aws.String("AutoScalingGroupName"),
+					Value: aws.String(reporter.autoscalingGroup),
+				})
+		}
 	}
 
 	log.Println("cw: reporter created")
-	log.Printf("cw: instanceId=%s, instanceType=%s, asg=%s\n",
+	log.Printf("cw: instanceId=%s, instanceType=%s, asg=%s aggr-only=%v\n",
 		reporter.instanceId, reporter.instanceType,
-		reporter.autoscalingGroup)
+		reporter.autoscalingGroup, reporter.aggregatedOnly)
 
 	return
 }

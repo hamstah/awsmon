@@ -26,8 +26,9 @@ type CliArguments struct {
 	AwsAutoScalingGroup string `arg:"help:autoscaling group that the instance is in" json:"aws-autoscaling-group"`
 	AwsInstanceId       string `arg:"help:id of the instance (required if wanting AWS support)" json:"aws-instance-id"`
 	AwsInstanceType     string `arg:"help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
-	AwsNamespace        string `arg:"-n,help:cloudwatch metric namespace" json:"aws-namespace"`
-	AwsRegion           string `arg:"-n,help:region for sending cloudwatch metrics to" json:"aws-region"`
+	AwsNamespace        string `arg:"help:cloudwatch metric namespace" json:"aws-namespace"`
+	AwsRegion           string `arg:"help:region for sending cloudwatch metrics to" json:"aws-region"`
+	AwsAggregatedOnly   bool   `arg:",help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
 }
 
 var (
@@ -81,6 +82,7 @@ func main() {
 			InstanceType:     args.AwsInstanceType,
 			AutoScalingGroup: args.AwsAutoScalingGroup,
 			Region:           args.AwsRegion,
+			AggregatedOnly:   args.AwsAggregatedOnly,
 		})
 	} else {
 		reporter, err = NewReporter("stdout", struct{}{})
