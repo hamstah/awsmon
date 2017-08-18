@@ -10,27 +10,29 @@ EC2 instances doesn't have memory and disk statistics by default. This project a
 
 
 ```
-Usage: awsmon [opts]
+Usage: awsmon [opts...]
 
 Options:
-  --interval INTERVAL, -i INTERVAL
-                         interval between samples [default: 30s]
-  --memory, -m           retrieve memory samples [default: true]
-  --disk DISK, -d DISK   retrieve disk samples from disk locations [default: [/]]
-  --config CONFIG [default: /etc/awsmon/config.json]
-
+  --interval INTERVAL    interval between samples [default: 30s]
+  --memory               retrieve memory samples [default: true]
+  --load-1m              retrieve load 1m avgs [default: true]
+  --load-5m              retrieve load 5m avgs
+  --load-15m             retrieve load 15m avgs
+  --relativize-load      makes loadavg relative to cpu count [default: true]
+  --disk DISK            retrieve disk samples from disk locations [default: [/]]
+  --config CONFIG        path to awsmon configuration file [default: /etc/awsmon/config.json]
   --debug                toggles debugging mode
-
-  --aws, -a              whether or not to enable AWS support [default: true]
-  --awsautoscalinggroup AWSAUTOSCALINGGROUP
-                         autoscaling group that the instance is in
-  --awsinstanceid AWSINSTANCEID
+  --aws                  whether or not to enable AWS support [default: true]
+  --aws-asg AWS-ASG      autoscaling group that the instance is in
+  --aws-instance-id AWS-INSTANCE-ID
                          id of the instance (required if wanting AWS support)
-  --awsinstancetype AWSINSTANCETYPE
+  --aws-instance-type AWS-INSTANCE-TYPE
                          type of the instance (required if wanting AWS support)
-  --awsnamespace AWSNAMESPACE, -n AWSNAMESPACE
+  --aws-namespace AWS-NAMESPACE
                          cloudwatch metric namespace [default: System/Linux]
-  --awsregion AWSREGION, -n AWSREGION
+  --aws-region AWS-REGION
+                         region for sending cloudwatch metrics to
+  --aws-aggregated-only
                          region for sending cloudwatch metrics to
   --help, -h             display this help and exit
 ```

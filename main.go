@@ -15,31 +15,37 @@ import (
 // CliArguments groups all the arguments that are
 // passed by the user to `awsmon`.
 type CliArguments struct {
-	Interval time.Duration `arg:"-i,help:interval between samples" json:"interval"`
-	Memory   bool          `arg:"-m,help:retrieve memory samples" json:"memory"`
-	Disk     []string      `arg:"-d,separate,help:retrieve disk samples from disk locations" json:"disk"`
+	Interval       time.Duration `arg:"help:interval between samples" json:"interval"`
+	Memory         bool          `arg:"help:retrieve memory samples" json:"memory"`
+	Load1M         bool          `arg:"--load-1m,help:retrieve load 1m avgs" json:"load-1m"`
+	Load5M         bool          `arg:"--load-5m,help:retrieve load 5m avgs" json:"load-5m"`
+	Load15M        bool          `arg:"--load-15m,help:retrieve load 15m avgs" json:"load-15m"`
+	RelativizeLoad bool          `arg:"--relativize-load,help:makes loadavg relative to cpu count" json:"relativize-load"`
+	Disk           []string      `arg:"separate,help:retrieve disk samples from disk locations" json:"disk"`
 
-	Config string `arg:env,help:path to awsmon configuration file json:"-"`
-	Debug  bool   `arg:"env,help:toggles debugging mode" json:"debug"`
+	Config string `arg:"help:path to awsmon configuration file" json:"-"`
+	Debug  bool   `arg:"help:toggles debugging mode" json:"debug"`
 
-	Aws                 bool   `arg:"-a,help:whether or not to enable AWS support" json:"aws"`
-	AwsAutoScalingGroup string `arg:"help:autoscaling group that the instance is in" json:"aws-autoscaling-group"`
-	AwsInstanceId       string `arg:"help:id of the instance (required if wanting AWS support)" json:"aws-instance-id"`
-	AwsInstanceType     string `arg:"help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
-	AwsNamespace        string `arg:"help:cloudwatch metric namespace" json:"aws-namespace"`
-	AwsRegion           string `arg:"help:region for sending cloudwatch metrics to" json:"aws-region"`
-	AwsAggregatedOnly   bool   `arg:"help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
+	Aws                 bool   `arg:"help:whether or not to enable AWS support" json:"aws"`
+	AwsAutoScalingGroup string `arg:"--aws-asg,help:autoscaling group that the instance is in" json:"aws-autoscaling-group"`
+	AwsInstanceId       string `arg:"--aws-instance-id,help:id of the instance (required if wanting AWS support)" json:"aws-instance-id"`
+	AwsInstanceType     string `arg:"--aws-instance-type,help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
+	AwsNamespace        string `arg:"--aws-namespace,help:cloudwatch metric namespace" json:"aws-namespace"`
+	AwsRegion           string `arg:"--aws-region,help:region for sending cloudwatch metrics to" json:"aws-region"`
+	AwsAggregatedOnly   bool   `arg:"--aws-aggregated-only,help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
 }
 
 var (
 	args = CliArguments{
-		Config:       "/etc/awsmon/config.json",
-		Memory:       true,
-		Disk:         []string{"/"},
-		Interval:     30 * time.Second,
-		AwsNamespace: "System/Linux",
-		Aws:          true,
-		Debug:        false,
+		Config:         "/etc/awsmon/config.json",
+		Memory:         true,
+		Load1M:         true,
+		Disk:           []string{"/"},
+		Interval:       30 * time.Second,
+		AwsNamespace:   "System/Linux",
+		Aws:            true,
+		Debug:          false,
+		RelativizeLoad: true,
 	}
 )
 
