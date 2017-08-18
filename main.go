@@ -72,7 +72,7 @@ func main() {
 
 	arg.MustParse(&args)
 	mustReadConfigFile(&args)
-	log.Println("configuration parsed %+v", args)
+	log.Printf("configuration parsed %+v\n", args)
 
 	ticker := time.NewTicker(args.Interval)
 	defer ticker.Stop()
