@@ -1,10 +1,10 @@
 VERSION := $(shell cat ./VERSION)
 
-image:
-	docker build -t cirocosta/awsmon .
-
 install:
 	go install -v
+
+image:
+	docker build -t cirocosta/awsmon .
 
 fmt:
 	go fmt ./main.go

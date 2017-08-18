@@ -36,6 +36,39 @@ func NewSwapUtilizationStat(sample *MemorySample) Stat {
 	}
 }
 
+// NewLoadAvg1Stat generates a generic Stat
+// structure prefilled with information about 1m LoadAvg.
+func NewLoadAvg1Stat(sample *LoadSample) Stat {
+	return Stat{
+		Name:  "LoadAvg1",
+		Unit:  "None",
+		When:  sample.When,
+		Value: sample.One,
+	}
+}
+
+// NewLoadAvg5Stat generates a generic Stat
+// structure prefilled with information about 5m LoadAvg.
+func NewLoadAvg5Stat(sample *LoadSample) Stat {
+	return Stat{
+		Name:  "LoadAvg5",
+		Unit:  "None",
+		When:  sample.When,
+		Value: sample.Five,
+	}
+}
+
+// NewLoadAvg15Stat generates a generic Stat
+// structure prefilled with information about 15m LoadAvg.
+func NewLoadAvg15Stat(sample *LoadSample) Stat {
+	return Stat{
+		Name:  "LoadAvg15",
+		Unit:  "None",
+		When:  sample.When,
+		Value: sample.Fithteen,
+	}
+}
+
 // NewDiskUtilizationStat generates a generic Stat
 // structure prefilled with information about disk
 // utilization.

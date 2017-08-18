@@ -124,6 +124,17 @@ func main() {
 					}
 				}
 
+				loadSample, err := TakeLoadSample()
+				if err != nil {
+					log.Println(err)
+					continue
+				} else {
+					err = reporter.SendStat(NewLoadAvg1Stat(&loadSample))
+					if err != nil {
+						log.Printf("ERROR: errored sending load1m stat %+v\n", err)
+					}
+				}
+
 				memorySample, err := TakeMemorySample()
 				if err != nil {
 					log.Println(err)
@@ -131,7 +142,7 @@ func main() {
 				} else {
 					err = reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
 					if err != nil {
-						log.Printf("ERROR: errored sending disk stat %+v\n", err)
+						log.Printf("ERROR: errored sending memory stat %+v\n", err)
 					}
 				}
 			}
