@@ -108,6 +108,12 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 					Value: aws.String(reporter.autoscalingGroup),
 				})
 		}
+	} else {
+		reporter.dimensions = append(
+			reporter.dimensions, &cloudwatch.Dimension{
+				Name:  aws.String("AutoScalingGroupName"),
+				Value: aws.String(reporter.autoscalingGroup),
+			})
 	}
 
 	log.Println("cw: reporter created")
