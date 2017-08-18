@@ -2,6 +2,7 @@ package lib
 
 import (
 	"io/ioutil"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -16,8 +17,9 @@ type LoadSample struct {
 	When     time.Time
 }
 
-const (
-	loadavgFileName = "/proc/loadavg"
+var (
+	loadavgFileName string  = "/proc/loadavg"
+	cpuCount        float64 = float64(runtime.NumCPU())
 )
 
 // getLoad retrieves the a slice of 'float64' values from
@@ -61,7 +63,7 @@ func parseLoad(data string) (loads []float64, err error) {
 
 // TakeLoadSample updates the /proc/loadavg and returns
 // a struct with the desired metrics to be consumed.
-func TakeLoadSample() (sample LoadSample, err error) {
+func TakeLoadSample(relativize bool) (sample LoadSample, err error) {
 	sample.When = time.Now()
 	loads, err := getLoad()
 	if err != nil {
@@ -70,9 +72,15 @@ func TakeLoadSample() (sample LoadSample, err error) {
 		return
 	}
 
-	sample.One = loads[0]
-	sample.Five = loads[1]
-	sample.Fithteen = loads[2]
+	if relativize {
+		sample.One = loads[0] / cpuCount
+		sample.Five = loads[1] / cpuCount
+		sample.Fithteen = loads[2] / cpuCount
+	} else {
+		sample.One = loads[0]
+		sample.Five = loads[1]
+		sample.Fithteen = loads[2]
+	}
 
 	return
 }

@@ -130,7 +130,7 @@ func main() {
 					}
 				}
 
-				loadSample, err := TakeLoadSample()
+				loadSample, err := TakeLoadSample(args.RelativizeLoad)
 				if err != nil {
 					log.Println(err)
 					continue
