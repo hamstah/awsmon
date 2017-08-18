@@ -28,7 +28,7 @@ type CliArguments struct {
 	AwsInstanceType     string `arg:"help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
 	AwsNamespace        string `arg:"help:cloudwatch metric namespace" json:"aws-namespace"`
 	AwsRegion           string `arg:"help:region for sending cloudwatch metrics to" json:"aws-region"`
-	AwsAggregatedOnly   bool   `arg:",help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
+	AwsAggregatedOnly   bool   `arg:"help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
 }
 
 var (
