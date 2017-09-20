@@ -43,7 +43,7 @@ var (
 		Disk:           []string{"/"},
 		Interval:       30 * time.Second,
 		AwsNamespace:   "System/Linux",
-		Aws:            true,
+		Aws:            false,
 		Debug:          false,
 		RelativizeLoad: true,
 	}
