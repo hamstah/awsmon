@@ -27,6 +27,8 @@ type CliArguments struct {
 	Debug  bool   `arg:"help:toggles debugging mode" json:"debug"`
 
 	Aws                 bool   `arg:"help:whether or not to enable AWS support" json:"aws"`
+	AwsAccessKey        string `arg:"--aws-access-key,help:aws access-key with cw putMetric caps" json:"aws-access-key"`
+	AwsSecretKey        string `arg:"--aws-secret-key,help:aws secret-key with cw putMetric caps" json:"aws-secret-key"`
 	AwsAutoScalingGroup string `arg:"--aws-asg,help:autoscaling group that the instance is in" json:"aws-autoscaling-group"`
 	AwsInstanceId       string `arg:"--aws-instance-id,help:id of the instance (required if wanting AWS support)" json:"aws-instance-id"`
 	AwsInstanceType     string `arg:"--aws-instance-type,help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
@@ -82,6 +84,8 @@ func main() {
 
 	if args.Aws {
 		reporter, err = NewReporter("cw", CloudWatchReporterConfig{
+			AccessKey:        args.AwsAccessKey,
+			SecretKey:        args.AwsSecretKey,
 			Debug:            args.Debug,
 			Namespace:        args.AwsNamespace,
 			InstanceId:       args.AwsInstanceId,

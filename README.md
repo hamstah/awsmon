@@ -22,7 +22,11 @@ Options:
   --disk DISK            retrieve disk samples from disk locations [default: [/]]
   --config CONFIG        path to awsmon configuration file [default: /etc/awsmon/config.json]
   --debug                toggles debugging mode
-  --aws                  whether or not to enable AWS support [default: true]
+  --aws                  whether or not to enable AWS support
+  --aws-access-key AWS-ACCESS-KEY
+                         aws access-key with cw putMetric caps
+  --aws-secret-key AWS-SECRET-KEY
+                         aws secret-key with cw putMetric caps
   --aws-asg AWS-ASG      autoscaling group that the instance is in
   --aws-instance-id AWS-INSTANCE-ID
                          id of the instance (required if wanting AWS support)

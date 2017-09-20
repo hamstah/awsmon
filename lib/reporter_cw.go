@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/pkg/errors"
@@ -29,6 +30,8 @@ type CloudWatchReporter struct {
 type CloudWatchReporterConfig struct {
 	Debug bool
 
+	AccessKey        string
+	SecretKey        string
 	AutoScalingGroup string
 	InstanceId       string
 	InstanceType     string
@@ -37,11 +40,17 @@ type CloudWatchReporterConfig struct {
 	AggregatedOnly   bool
 }
 
-var (
-	awsConfig = &aws.Config{}
-)
-
 func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchReporter, err error) {
+	if cfg.AccessKey == "" {
+		err = errors.Errorf("An accesskey must be provided")
+		return
+	}
+
+	if cfg.SecretKey == "" {
+		err = errors.Errorf("A SecretKey must be provided")
+		return
+	}
+
 	if cfg.Namespace == "" {
 		err = errors.Errorf("A namespace must be provided")
 		return
@@ -57,6 +66,17 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 		return
 	}
 
+	if cfg.Region == "" {
+		err = errors.Errorf("A region must be provided")
+		return
+	}
+
+	var awsConfig = &aws.Config{
+		Region: &cfg.Region,
+		Credentials: credentials.NewStaticCredentials(
+			cfg.AccessKey, cfg.SecretKey, ""),
+	}
+
 	if cfg.Debug {
 		awsConfig.LogLevel =
 			aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors)
@@ -67,10 +87,6 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 	reporter.autoscalingGroup = cfg.AutoScalingGroup
 	reporter.namespace = cfg.Namespace
 	reporter.aggregatedOnly = cfg.AggregatedOnly
-
-	if cfg.Region != "" {
-		awsConfig.Region = aws.String(cfg.Region)
-	}
 
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
