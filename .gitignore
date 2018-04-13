@@ -10,3 +10,7 @@ tags
 # Folders
 godeps/*
 dist/
+
+.terraform
+*.tfstate
+*.tfstate.backup
