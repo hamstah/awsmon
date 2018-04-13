@@ -41,15 +41,7 @@ type CloudWatchReporterConfig struct {
 }
 
 func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchReporter, err error) {
-	if cfg.AccessKey == "" {
-		err = errors.Errorf("An accesskey must be provided")
-		return
-	}
-
-	if cfg.SecretKey == "" {
-		err = errors.Errorf("A SecretKey must be provided")
-		return
-	}
+	var awsConfig = &aws.Config{}
 
 	if cfg.Namespace == "" {
 		err = errors.Errorf("A namespace must be provided")
@@ -66,15 +58,13 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 		return
 	}
 
-	if cfg.Region == "" {
-		err = errors.Errorf("A region must be provided")
-		return
+	if cfg.AccessKey != "" && cfg.SecretKey != "" {
+		awsConfig.Credentials = credentials.NewStaticCredentials(
+			cfg.AccessKey, cfg.SecretKey, "")
 	}
 
-	var awsConfig = &aws.Config{
-		Region: &cfg.Region,
-		Credentials: credentials.NewStaticCredentials(
-			cfg.AccessKey, cfg.SecretKey, ""),
+	if cfg.Region != "" {
+		awsConfig.Region = aws.String(cfg.Region)
 	}
 
 	if cfg.Debug {
