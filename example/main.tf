@@ -51,9 +51,10 @@ resource "aws_security_group" "allow-ssh-and-egress" {
 # SSH key so we can properly SSH into it to verify whether
 # everything is worked as intended.
 resource "aws_instance" "main" {
-  instance_type = "t2.micro"
-  ami           = "${data.aws_ami.ubuntu.id}"
-  key_name      = "${aws_key_pair.main.id}"
+  instance_type        = "t2.micro"
+  ami                  = "${data.aws_ami.ubuntu.id}"
+  key_name             = "${aws_key_pair.main.id}"
+  iam_instance_profile = "${aws_iam_instance_profile.main.name}"
 
   vpc_security_group_ids = [
     "${aws_security_group.allow-ssh-and-egress.id}",
