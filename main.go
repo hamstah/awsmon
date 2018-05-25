@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/alexflint/go-arg"
@@ -39,7 +40,10 @@ type CliArguments struct {
 }
 
 var (
-	args = CliArguments{
+	reporter Reporter
+	err      error
+	disks    = []string{}
+	args     = CliArguments{
 		Aws:            false,
 		AwsNamespace:   "System/Linux",
 		Config:         "/etc/awsmon/config.json",
@@ -88,6 +92,86 @@ func mustReadConfigFile(args *CliArguments) {
 	logger.Info().Msg("configuration loaded")
 }
 
+func findDisks() {
+	for _, diskPath := range args.Disk {
+		finfo, err := os.Stat(diskPath)
+		if err == nil {
+			if finfo.IsDir() {
+				disks = append(disks, diskPath)
+			}
+		} else {
+			log.Warn().
+				Err(err).
+				Str("path", diskPath).
+				Msg("specified path is not a directory or could not be found")
+		}
+	}
+
+	return
+}
+
+func collectAndSendDiskMetrics() {
+	for _, diskPath := range disks {
+		diskSample, err := TakeDiskSample(diskPath)
+		if err != nil {
+			log.Error().
+				Err(err).
+				Str("path", diskPath).
+				Msg("failed to take disk sample")
+			continue
+		}
+
+		err = reporter.SendStat(NewDiskUtilizationStat(&diskSample))
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to send disk stat")
+		}
+	}
+
+	return
+}
+
+func collectAndSendLoadMetrics() {
+	loadSample, err := TakeLoadSample(args.RelativizeLoad)
+	if err != nil {
+		log.Error().
+			Err(err).
+			Bool("relativize-load", args.RelativizeLoad).
+			Msg("failed to take load sample")
+		return
+	}
+
+	// TODO send other loads too
+	err = reporter.SendStat(NewLoadAvg1Stat(&loadSample))
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("failed to report load stat")
+	}
+
+	return
+}
+
+func collectAndSendMemoryMetrics() {
+	memorySample, err := TakeMemorySample()
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("failed to take memory sample")
+		return
+	}
+
+	err = reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
+	if err != nil {
+		log.Error().
+			Err(err).
+			Msg("failed to report memory sample")
+	}
+
+	return
+}
+
 func main() {
 	arg.MustParse(&args)
 	mustReadConfigFile(&args)
@@ -101,14 +185,12 @@ func main() {
 		Msg("initializing")
 
 	var (
-		reporter  Reporter
-		err       error
 		ticker    = time.NewTicker(args.Interval)
 		closeChan = make(chan os.Signal, 1)
 	)
 
 	defer ticker.Stop()
-	signal.Notify(closeChan, os.Interrupt)
+	signal.Notify(closeChan, syscall.SIGINT, syscall.SIGTERM)
 
 	if args.Aws {
 		reporter, err = NewReporter("cw", CloudWatchReporterConfig{
@@ -132,73 +214,15 @@ func main() {
 		os.Exit(1)
 	}
 
-	var disksToLookupFor = make([]string, 0)
-	for _, diskPath := range args.Disk {
-		finfo, err := os.Stat(diskPath)
-		if err == nil {
-			if finfo.IsDir() {
-				disksToLookupFor = append(disksToLookupFor, diskPath)
-			}
-		} else {
-			log.Warn().
-				Err(err).
-				Str("path", diskPath).
-				Msg("specified path is not a directory or could not be found")
-		}
-	}
+	findDisks()
 
 	go func() {
 		for {
 			select {
 			case <-ticker.C:
-				for _, diskPath := range disksToLookupFor {
-					diskSample, err := TakeDiskSample(diskPath)
-					if err != nil {
-						log.Error().
-							Err(err).
-							Str("path", diskPath).
-							Msg("failed to take disk sample")
-						continue
-					} else {
-						err = reporter.SendStat(NewDiskUtilizationStat(&diskSample))
-						if err != nil {
-							log.Error().
-								Err(err).
-								Msg("failed to send disk stat")
-						}
-					}
-				}
-
-				loadSample, err := TakeLoadSample(args.RelativizeLoad)
-				if err != nil {
-					log.Error().
-						Err(err).
-						Bool("relativize-load", args.RelativizeLoad).
-						Msg("failed to take load sample")
-					continue
-				} else {
-					err = reporter.SendStat(NewLoadAvg1Stat(&loadSample))
-					if err != nil {
-						log.Error().
-							Err(err).
-							Msg("failed to report load stat")
-					}
-				}
-
-				memorySample, err := TakeMemorySample()
-				if err != nil {
-					log.Error().
-						Err(err).
-						Msg("failed to take memory sample")
-					continue
-				} else {
-					err = reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
-					if err != nil {
-						log.Error().
-							Err(err).
-							Msg("failed to report memory sample")
-					}
-				}
+				collectAndSendDiskMetrics()
+				collectAndSendLoadMetrics()
+				collectAndSendMemoryMetrics()
 			}
 		}
 	}()
