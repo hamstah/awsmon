@@ -16,57 +16,76 @@ import (
 // CliArguments groups all the arguments that are
 // passed by the user to `awsmon`.
 type CliArguments struct {
+	Disk           []string      `arg:"separate,help:retrieve disk samples from disk locations" json:"disk"`
 	Interval       time.Duration `arg:"help:interval between samples" json:"interval"`
-	Memory         bool          `arg:"help:retrieve memory samples" json:"memory"`
+	Load15M        bool          `arg:"--load-15m,help:retrieve load 15m avgs" json:"load-15m"`
 	Load1M         bool          `arg:"--load-1m,help:retrieve load 1m avgs" json:"load-1m"`
 	Load5M         bool          `arg:"--load-5m,help:retrieve load 5m avgs" json:"load-5m"`
-	Load15M        bool          `arg:"--load-15m,help:retrieve load 15m avgs" json:"load-15m"`
+	Memory         bool          `arg:"help:retrieve memory samples" json:"memory"`
 	RelativizeLoad bool          `arg:"--relativize-load,help:makes loadavg relative to cpu count" json:"relativize-load"`
-	Disk           []string      `arg:"separate,help:retrieve disk samples from disk locations" json:"disk"`
 
 	Config string `arg:"help:path to awsmon configuration file" json:"-"`
 	Debug  bool   `arg:"help:toggles debugging mode" json:"debug"`
 
 	Aws                 bool   `arg:"help:whether or not to enable AWS support" json:"aws"`
 	AwsAccessKey        string `arg:"--aws-access-key,help:aws access-key with cw putMetric caps" json:"aws-access-key"`
-	AwsSecretKey        string `arg:"--aws-secret-key,help:aws secret-key with cw putMetric caps" json:"aws-secret-key"`
+	AwsAggregatedOnly   bool   `arg:"--aws-aggregated-only,help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
 	AwsAutoScalingGroup string `arg:"--aws-asg,help:autoscaling group that the instance is in" json:"aws-autoscaling-group"`
 	AwsInstanceId       string `arg:"--aws-instance-id,help:id of the instance (required if wanting AWS support)" json:"aws-instance-id"`
 	AwsInstanceType     string `arg:"--aws-instance-type,help:type of the instance (required if wanting AWS support)" json:"aws-instance-type"`
 	AwsNamespace        string `arg:"--aws-namespace,help:cloudwatch metric namespace" json:"aws-namespace"`
 	AwsRegion           string `arg:"--aws-region,help:region for sending cloudwatch metrics to" json:"aws-region"`
-	AwsAggregatedOnly   bool   `arg:"--aws-aggregated-only,help:region for sending cloudwatch metrics to" json:"aws-aggregated-only"`
+	AwsSecretKey        string `arg:"--aws-secret-key,help:aws secret-key with cw putMetric caps" json:"aws-secret-key"`
 }
 
 var (
 	args = CliArguments{
+		Aws:            false,
+		AwsNamespace:   "System/Linux",
 		Config:         "/etc/awsmon/config.json",
-		Memory:         true,
-		Load1M:         true,
+		Debug:          false,
 		Disk:           []string{"/"},
 		Interval:       30 * time.Second,
-		AwsNamespace:   "System/Linux",
-		Aws:            false,
-		Debug:          false,
+		Load1M:         true,
+		Memory:         true,
 		RelativizeLoad: true,
 	}
 )
 
+// mustReadConfigFile reads the configuration file as specified
+// via `args.Config`, loading the json configuration.
+//
+// In the case of errors, breaks the whole execution.
 func mustReadConfigFile(args *CliArguments) {
-	if _, err := os.Stat(args.Config); os.IsNotExist(err) {
+	var (
+		err    error
+		logger = log.With().Str("config", args.Config).Logger()
+	)
+
+	_, err = os.Stat(args.Config)
+	if os.IsNotExist(err) {
 		return
 	}
 
 	fd, err := os.Open(args.Config)
 	if err != nil {
-		panic(err)
+		logger.Fatal().
+			Err(err).
+			Msg("couldn't open configuration file")
+		os.Exit(1)
 	}
 	defer fd.Close()
 
 	dec := json.NewDecoder(fd)
-	if err = dec.Decode(args); err != nil {
-		panic(err)
+	err = dec.Decode(args)
+	if err != nil {
+		logger.Fatal().
+			Err(err).
+			Msg("couldn't decode json configuration file into args struct")
+		os.Exit(1)
 	}
+
+	logger.Info().Msg("configuration loaded")
 }
 
 func main() {
