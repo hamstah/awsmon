@@ -2,12 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"log"
 	"os"
 	"os/signal"
 	"time"
 
 	"github.com/alexflint/go-arg"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 
 	. "github.com/cirocosta/awsmon/lib"
 )
@@ -69,17 +70,25 @@ func mustReadConfigFile(args *CliArguments) {
 }
 
 func main() {
-	var reporter Reporter
-	var err error
-
 	arg.MustParse(&args)
 	mustReadConfigFile(&args)
-	log.Printf("configuration parsed %+v\n", args)
 
-	ticker := time.NewTicker(args.Interval)
+	if args.Debug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+
+	log.Info().
+		Interface("configuration", args).
+		Msg("initializing")
+
+	var (
+		reporter  Reporter
+		err       error
+		ticker    = time.NewTicker(args.Interval)
+		closeChan = make(chan os.Signal, 1)
+	)
+
 	defer ticker.Stop()
-
-	closeChan := make(chan os.Signal, 1)
 	signal.Notify(closeChan, os.Interrupt)
 
 	if args.Aws {
@@ -98,8 +107,10 @@ func main() {
 		reporter, err = NewReporter("stdout", struct{}{})
 	}
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal().
+			Err(err).
+			Msg("failed to instantiate reporter")
+		os.Exit(1)
 	}
 
 	var disksToLookupFor = make([]string, 0)
@@ -110,10 +121,10 @@ func main() {
 				disksToLookupFor = append(disksToLookupFor, diskPath)
 			}
 		} else {
-			log.Printf(
-				"WARNING: specified disk path %s "+
-					"is not a directory or couldn't be found - %+v\n",
-				diskPath, err)
+			log.Warn().
+				Err(err).
+				Str("path", diskPath).
+				Msg("specified path is not a directory or could not be found")
 		}
 	}
 
@@ -124,42 +135,56 @@ func main() {
 				for _, diskPath := range disksToLookupFor {
 					diskSample, err := TakeDiskSample(diskPath)
 					if err != nil {
-						log.Printf("ERROR: errored taking disk sample - %+v\n", err)
+						log.Error().
+							Err(err).
+							Str("path", diskPath).
+							Msg("failed to take disk sample")
 						continue
 					} else {
 						err = reporter.SendStat(NewDiskUtilizationStat(&diskSample))
 						if err != nil {
-							log.Printf("ERROR: errored sending disk stat %+v\n", err)
+							log.Error().
+								Err(err).
+								Msg("failed to send disk stat")
 						}
 					}
 				}
 
 				loadSample, err := TakeLoadSample(args.RelativizeLoad)
 				if err != nil {
-					log.Println(err)
+					log.Error().
+						Err(err).
+						Bool("relativize-load", args.RelativizeLoad).
+						Msg("failed to take load sample")
 					continue
 				} else {
 					err = reporter.SendStat(NewLoadAvg1Stat(&loadSample))
 					if err != nil {
-						log.Printf("ERROR: errored sending load1m stat %+v\n", err)
+						log.Error().
+							Err(err).
+							Msg("failed to report load stat")
 					}
 				}
 
 				memorySample, err := TakeMemorySample()
 				if err != nil {
-					log.Println(err)
+					log.Error().
+						Err(err).
+						Msg("failed to take memory sample")
 					continue
 				} else {
 					err = reporter.SendStat(NewMemoryUtilizationStat(&memorySample))
 					if err != nil {
-						log.Printf("ERROR: errored sending memory stat %+v\n", err)
+						log.Error().
+							Err(err).
+							Msg("failed to report memory sample")
 					}
 				}
 			}
 		}
 	}()
 
-	log.Printf("starting sampling - %+v", args)
+	log.Info().Msg("starting sampling")
 	<-closeChan
 	ticker.Stop()
 }
