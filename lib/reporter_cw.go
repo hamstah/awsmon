@@ -1,19 +1,20 @@
 package lib
 
 import (
-	"log"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // CloudWatchReporter implements the Reporter interface
 // to provide the connection between samples generated
 // by the machine and CloudWatch.
 type CloudWatchReporter struct {
+	logger     zerolog.Logger
 	cw         *cloudwatch.CloudWatch
 	dimensions []*cloudwatch.Dimension
 
@@ -78,6 +79,7 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter *CloudWatchRe
 		autoscalingGroup: cfg.AutoScalingGroup,
 		namespace:        cfg.Namespace,
 		aggregatedOnly:   cfg.AggregatedOnly,
+		logger:           log.With().Str("from", "reporter_cw").Logger(),
 	}
 
 	sess, err := session.NewSession(awsConfig)
@@ -124,16 +126,17 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter *CloudWatchRe
 			})
 	}
 
-	log.Println("cw: reporter created")
-	log.Printf("cw: instanceId=%s, instanceType=%s, asg=%s aggr-only=%v\n",
-		reporter.instanceId, reporter.instanceType,
-		reporter.autoscalingGroup, reporter.aggregatedOnly)
+	reporter.logger.Debug().
+		Interface("reporter", reporter).
+		Msg("reporter created")
 
 	return
 }
 
 func (reporter *CloudWatchReporter) SendStat(stat Stat) (err error) {
-	log.Printf("cw: sending stat %+v\n", stat)
+	reporter.logger.Debug().
+		Interface("stat", stat).
+		Msg("sending stat")
 
 	var extraDimensions = make([]*cloudwatch.Dimension, 0)
 	for k, v := range stat.ExtraDimensions {

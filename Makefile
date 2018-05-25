@@ -7,8 +7,7 @@ image:
 	docker build -t cirocosta/awsmon .
 
 fmt:
-	go fmt ./main.go
-	cd lib && go fmt
+	go fmt ./...
 
 release:
 	git tag -a $(VERSION) -m "Release" || true
