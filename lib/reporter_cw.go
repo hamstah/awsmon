@@ -40,7 +40,7 @@ type CloudWatchReporterConfig struct {
 	AggregatedOnly   bool
 }
 
-func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchReporter, err error) {
+func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter *CloudWatchReporter, err error) {
 	var awsConfig = &aws.Config{}
 
 	if cfg.Namespace == "" {
@@ -72,11 +72,13 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 			aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors)
 	}
 
-	reporter.instanceId = cfg.InstanceId
-	reporter.instanceType = cfg.InstanceType
-	reporter.autoscalingGroup = cfg.AutoScalingGroup
-	reporter.namespace = cfg.Namespace
-	reporter.aggregatedOnly = cfg.AggregatedOnly
+	reporter = &CloudWatchReporter{
+		instanceId:       cfg.InstanceId,
+		instanceType:     cfg.InstanceType,
+		autoscalingGroup: cfg.AutoScalingGroup,
+		namespace:        cfg.Namespace,
+		aggregatedOnly:   cfg.AggregatedOnly,
+	}
 
 	sess, err := session.NewSession(awsConfig)
 	if err != nil {
@@ -130,7 +132,7 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter CloudWatchRep
 	return
 }
 
-func (reporter CloudWatchReporter) SendStat(stat Stat) (err error) {
+func (reporter *CloudWatchReporter) SendStat(stat Stat) (err error) {
 	log.Printf("cw: sending stat %+v\n", stat)
 
 	var extraDimensions = make([]*cloudwatch.Dimension, 0)

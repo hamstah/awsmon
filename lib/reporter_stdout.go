@@ -1,16 +1,24 @@
 package lib
 
 import (
-	"log"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
-type StdoutReporter struct{}
+type StdoutReporter struct {
+	logger zerolog.Logger
+}
 
-func NewStdoutReporter() (reporter StdoutReporter, err error) {
+func NewStdoutReporter() (reporter *StdoutReporter, err error) {
+	reporter = &StdoutReporter{
+		logger: log.With().Str("from", "reporter_stdout").Logger(),
+	}
 	return
 }
 
-func (reporter StdoutReporter) SendStat(stat Stat) (err error) {
-	log.Printf("SAMPLE: %+v\n", stat)
+func (r *StdoutReporter) SendStat(stat Stat) (err error) {
+	r.logger.Info().
+		Interface("stat", stat).
+		Msg("sending stat")
 	return
 }
