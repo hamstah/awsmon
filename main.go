@@ -17,6 +17,9 @@ import (
 // CliArguments groups all the arguments that are
 // passed by the user to `awsmon`.
 type CliArguments struct {
+	Config string `arg:"help:path to awsmon configuration file" json:"-"`
+	Debug  bool   `arg:"help:toggles debugging mode" json:"debug"`
+
 	Disk           []string      `arg:"separate,help:retrieve disk samples from disk locations" json:"disk"`
 	Interval       time.Duration `arg:"help:interval between samples" json:"interval"`
 	Load15M        bool          `arg:"--load-15m,help:retrieve load 15m avgs" json:"load-15m"`
@@ -24,9 +27,6 @@ type CliArguments struct {
 	Load5M         bool          `arg:"--load-5m,help:retrieve load 5m avgs" json:"load-5m"`
 	Memory         bool          `arg:"help:retrieve memory samples" json:"memory"`
 	RelativizeLoad bool          `arg:"--relativize-load,help:makes loadavg relative to cpu count" json:"relativize-load"`
-
-	Config string `arg:"help:path to awsmon configuration file" json:"-"`
-	Debug  bool   `arg:"help:toggles debugging mode" json:"debug"`
 
 	Aws                 bool   `arg:"help:whether or not to enable AWS support" json:"aws"`
 	AwsAccessKey        string `arg:"--aws-access-key,help:aws access-key with cw putMetric caps" json:"aws-access-key"`
@@ -92,33 +92,20 @@ func mustReadConfigFile(args *CliArguments) {
 	logger.Info().Msg("configuration loaded")
 }
 
-func findDisks() {
-	for _, diskPath := range args.Disk {
-		finfo, err := os.Stat(diskPath)
-		if err == nil {
-			if finfo.IsDir() {
-				disks = append(disks, diskPath)
-			}
-		} else {
-			log.Warn().
-				Err(err).
-				Str("path", diskPath).
-				Msg("specified path is not a directory or could not be found")
-		}
-	}
+func collectAndSendDiskMetrics() (err error) {
+	var (
+		diskSample DiskSample
+		diskPath   string
+	)
 
-	return
-}
-
-func collectAndSendDiskMetrics() {
-	for _, diskPath := range disks {
-		diskSample, err := TakeDiskSample(diskPath)
+	for _, diskPath = range args.Disk {
+		diskSample, err = TakeDiskSample(diskPath)
 		if err != nil {
 			log.Error().
 				Err(err).
 				Str("path", diskPath).
 				Msg("failed to take disk sample")
-			continue
+			return
 		}
 
 		err = reporter.SendStat(NewDiskUtilizationStat(&diskSample))
@@ -126,13 +113,14 @@ func collectAndSendDiskMetrics() {
 			log.Error().
 				Err(err).
 				Msg("failed to send disk stat")
+			return
 		}
 	}
 
 	return
 }
 
-func collectAndSendLoadMetrics() {
+func collectAndSendLoadMetrics() (err error) {
 	loadSample, err := TakeLoadSample(args.RelativizeLoad)
 	if err != nil {
 		log.Error().
@@ -148,6 +136,7 @@ func collectAndSendLoadMetrics() {
 			log.Error().
 				Err(err).
 				Msg("failed to report load1m stat")
+			return
 		}
 	}
 
@@ -157,6 +146,7 @@ func collectAndSendLoadMetrics() {
 			log.Error().
 				Err(err).
 				Msg("failed to report load5m stat")
+			return
 		}
 
 	}
@@ -167,13 +157,14 @@ func collectAndSendLoadMetrics() {
 			log.Error().
 				Err(err).
 				Msg("failed to report load15m stat")
+			return
 		}
 	}
 
 	return
 }
 
-func collectAndSendMemoryMetrics() {
+func collectAndSendMemoryMetrics() (err error) {
 	memorySample, err := TakeMemorySample()
 	if err != nil {
 		log.Error().
@@ -187,6 +178,7 @@ func collectAndSendMemoryMetrics() {
 		log.Error().
 			Err(err).
 			Msg("failed to report memory sample")
+		return
 	}
 
 	return
@@ -205,12 +197,13 @@ func main() {
 		Msg("initializing")
 
 	var (
-		ticker    = time.NewTicker(args.Interval)
-		closeChan = make(chan os.Signal, 1)
+		ticker     = time.NewTicker(args.Interval)
+		signalChan = make(chan os.Signal, 1)
+		errChan    = make(chan error, 1)
 	)
 
 	defer ticker.Stop()
-	signal.Notify(closeChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	if args.Aws {
 		reporter, err = NewReporter("cw", CloudWatchReporterConfig{
@@ -234,20 +227,35 @@ func main() {
 		os.Exit(1)
 	}
 
-	findDisks()
-
 	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				collectAndSendDiskMetrics()
-				collectAndSendLoadMetrics()
-				collectAndSendMemoryMetrics()
+		for _ = range ticker.C {
+			err = collectAndSendDiskMetrics()
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			err = collectAndSendLoadMetrics()
+			if err != nil {
+				errChan <- err
+				return
+			}
+
+			err = collectAndSendMemoryMetrics()
+			if err != nil {
+				errChan <- err
+				return
 			}
 		}
 	}()
 
 	log.Info().Msg("starting sampling")
-	<-closeChan
-	ticker.Stop()
+	select {
+	case <-signalChan:
+		log.Info().Msg("awsmon gracefully stopped")
+		return
+	case err = <-errChan:
+		log.Fatal().Err(err).Msg("awsmon stopped")
+		os.Exit(1)
+	}
 }
