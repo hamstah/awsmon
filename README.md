@@ -83,6 +83,17 @@ The parameters can also be statically configured via the configuration file (`--
 }
 ```
 
+If all the instance configurations are specified, no calls are made to the EC2 metadata service. Otherwise, such information is automatically retrieved from such service.
+
+
+#### Necessary permissions
+
+The only permission needed by AWSMON is `cloudwatch:putMetricData`. 
+
+If you're unsure of how to create an instance that has such capability, check out the `./example` directory. 
+
+It contains [terraform](https://terraform.io) files that create an instance with the right permissions.
+
 
 #### Running it while instance is alive
 
