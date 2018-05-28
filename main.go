@@ -142,12 +142,32 @@ func collectAndSendLoadMetrics() {
 		return
 	}
 
-	// TODO send other loads too
-	err = reporter.SendStat(NewLoadAvg1Stat(&loadSample))
-	if err != nil {
-		log.Error().
-			Err(err).
-			Msg("failed to report load stat")
+	if args.Load1M {
+		err = reporter.SendStat(NewLoadAvg1Stat(&loadSample))
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to report load1m stat")
+		}
+	}
+
+	if args.Load5M {
+		err = reporter.SendStat(NewLoadAvg5Stat(&loadSample))
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to report load5m stat")
+		}
+
+	}
+
+	if args.Load15M {
+		err = reporter.SendStat(NewLoadAvg15Stat(&loadSample))
+		if err != nil {
+			log.Error().
+				Err(err).
+				Msg("failed to report load15m stat")
+		}
 	}
 
 	return
