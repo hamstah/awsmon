@@ -3,6 +3,7 @@ package lib
 import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/ec2metadata"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/cloudwatch"
 	"github.com/pkg/errors"
@@ -42,35 +43,62 @@ type CloudWatchReporterConfig struct {
 }
 
 func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter *CloudWatchReporter, err error) {
-	var awsConfig = &aws.Config{}
-
-	if cfg.Namespace == "" {
-		err = errors.Errorf("A namespace must be provided")
-		return
-	}
-
-	if cfg.InstanceId == "" {
-		err = errors.Errorf("An instanceId must be provided")
-		return
-	}
-
-	if cfg.InstanceType == "" {
-		err = errors.Errorf("An instanceType must be provided")
-		return
-	}
-
-	if cfg.AccessKey != "" && cfg.SecretKey != "" {
-		awsConfig.Credentials = credentials.NewStaticCredentials(
-			cfg.AccessKey, cfg.SecretKey, "")
-	}
-
-	if cfg.Region != "" {
-		awsConfig.Region = aws.String(cfg.Region)
-	}
+	var (
+		awsConfig            = &aws.Config{}
+		instanceInfoSet bool = cfg.InstanceId != "" &&
+			cfg.InstanceType != "" &&
+			cfg.Region != ""
+		staticCredentialsSet bool = cfg.AccessKey != "" &&
+			cfg.SecretKey != ""
+	)
 
 	if cfg.Debug {
 		awsConfig.LogLevel =
 			aws.LogLevel(aws.LogDebug | aws.LogDebugWithRequestErrors)
+	}
+
+	if cfg.Namespace == "" {
+		err = errors.Errorf("A CloudWatch Namespace must be provided")
+		return
+	}
+
+	if cfg.AggregatedOnly {
+		if cfg.AutoScalingGroup == "" {
+			err = errors.Errorf("aggregatedOnly mode requires autoscaling group.")
+			return
+		}
+	}
+
+	if !instanceInfoSet {
+		var (
+			metaSession      *session.Session
+			instanceIdentity ec2metadata.EC2InstanceIdentityDocument
+		)
+
+		metaSession, err = session.NewSession(awsConfig)
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed creating aws session for retrieving ec2 metadata")
+			return
+		}
+
+		instanceIdentity, err = ec2metadata.New(metaSession).GetInstanceIdentityDocument()
+		if err != nil {
+			err = errors.Wrapf(err,
+				"failed to retrieve instance metadata from AWS")
+			return
+		}
+
+		cfg.InstanceType = instanceIdentity.InstanceType
+		cfg.InstanceId = instanceIdentity.InstanceID
+		cfg.Region = instanceIdentity.Region
+	}
+
+	awsConfig.Region = aws.String(cfg.Region)
+
+	if staticCredentialsSet {
+		awsConfig.Credentials = credentials.NewStaticCredentials(
+			cfg.AccessKey, cfg.SecretKey, "")
 	}
 
 	reporter = &CloudWatchReporter{
@@ -87,13 +115,6 @@ func NewCloudWatchReporter(cfg CloudWatchReporterConfig) (reporter *CloudWatchRe
 		err = errors.Wrapf(err,
 			"Couldn't create AWS session.")
 		return
-	}
-
-	if cfg.AggregatedOnly {
-		if cfg.AutoScalingGroup == "" {
-			err = errors.Errorf("aggregatedOnly mode requires autoscaling group.")
-			return
-		}
 	}
 
 	reporter.cw = cloudwatch.New(sess)
