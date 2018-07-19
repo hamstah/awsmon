@@ -4,9 +4,9 @@
 
 ## Overview
 
-EC2 instances don't have memory and disk statistics by default. 
+EC2 instances don't have their memory and disk statistics collect by default. 
 
-This project aims at providing a single static binary that gives you such capabilities.
+This project aims at providing a single static binary that gives you such capabilities so that you can create custom alarms to base your autoscaling decisions on.
 
 *ps.: this started as a fork of [go-aws-mon](https://github.com/a3linux/go-aws-mon/), now also providing with static configuration, non-aws mode and continuous execution.*
 
