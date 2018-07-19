@@ -12,6 +12,7 @@ This project aims at providing a single static binary that gives you such capabi
 
 ## Table of Contents
 
+- [How it works](#how-it-works)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
@@ -19,6 +20,15 @@ This project aims at providing a single static binary that gives you such capabi
 - [Running it while instance is alive](#running-it-while-instance-is-alive)
 - [AWS](#aws)
 - [LICENSE](#license)
+
+
+## How it works
+
+`awsmon` is meant to work as a daemon that continuously pulls metrics from a live Linux system and forward these metrics to a reporter.
+
+![awsmon main loop](./.github/awsmon-main-loop.svg)
+
+A reporter that implements the `Reporter` interface then takes these collected metrics and send them - in the case we're interested in (AWS), there's the `CloudWatchReporter`, which reports to `CloudWatch`.
 
 
 ## Installation
