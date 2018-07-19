@@ -1,13 +1,27 @@
-<h1 align="center">awsmon 📡  </h1>
+<h1 align="center">WeDeploy AWSMON</h1>
 
-<h5 align="center">Sends memory and disk statistics back to CloudWatch</h5>
+<h5 align="center">Sends custom memory, disk and load statistics back to AWS CloudWatch</h5>
 
-<br/>
+## Overview
 
-EC2 instances doesn't have memory and disk statistics by default. This project aims at providing a single static binary that gives you such capabilities.
+EC2 instances don't have memory and disk statistics by default. 
 
-> Fork of [go-aws-mon](https://github.com/a3linux/go-aws-mon/) with static configuration, non-aws mode and continuous execution.
+This project aims at providing a single static binary that gives you such capabilities.
 
+*ps.: this started as a fork of [go-aws-mon](https://github.com/a3linux/go-aws-mon/), now also providing with static configuration, non-aws mode and continuous execution.*
+
+## Table of Contents
+
+- [Usage](#usage)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Necessary permissions](#necessary-permissions)
+- [Running it while instance is alive](#running-it-while-instance-is-alive)
+- [AWS](#aws)
+- [LICENSE](#license)
+
+
+## Usage
 
 ```
 Usage: awsmon [opts...]
@@ -41,7 +55,7 @@ Options:
   --help, -h             display this help and exit
 ```
 
-#### Install
+## Installation
 
 You can either use `go` or fetch the binary directly from GitHub releases page:
 
@@ -63,7 +77,7 @@ tar xzfv /tmp/awsmon/awsmon.tar.gz -C /tmp/awsmon
 sudo mv /tmp/awsmon/awsmon $BINARY_DESTINATION
 ```
 
-#### Configuration
+## Configuration
 
 The parameters can also be statically configured via the configuration file (`--config`) that defaults to `/etc/awsmon/config.json`:
 
@@ -86,7 +100,7 @@ The parameters can also be statically configured via the configuration file (`--
 If all the instance configurations are specified, no calls are made to the EC2 metadata service. Otherwise, such information is automatically retrieved from such service.
 
 
-#### Necessary permissions
+## Necessary permissions
 
 The only permission needed by AWSMON is `cloudwatch:putMetricData`. 
 
@@ -95,7 +109,7 @@ If you're unsure of how to create an instance that has such capability, check ou
 It contains [terraform](https://terraform.io) files that create an instance with the right permissions.
 
 
-#### Running it while instance is alive
+## Running it while instance is alive
 
 In order to keep the binary running through the whole life of the instance, `awsmon` can be configured as a `systemd` service with something like the following:
 
@@ -113,15 +127,14 @@ RestartSec=3
 WantedBy=default.target
 ```
 
-
-#### AWS
+## AWS
 
 AWS support requires that you have already configured session support by either configuring an instance role for the EC2 instance or creating a well-formed credentials file (`~/.aws/credentials`). 
 
 If you're unsure about whether the metrics are really being succesfully sent to CloudWatch, enable debug (append `--debug` to the configuration). This will print out the AWS client logs.
 
 
-#### LICENSE
+## LICENSE
 
 See `./LICENSE` (inherits from the fork).
 
