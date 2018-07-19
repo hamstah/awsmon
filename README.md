@@ -26,7 +26,9 @@ This project aims at providing a single static binary that gives you such capabi
 
 `awsmon` is meant to work as a daemon that continuously pulls metrics from a live Linux system and forward these metrics to a reporter.
 
-![awsmon main loop](./.github/awsmon-main-loop.svg)
+<div align="center">
+  <img width="100%" src="./.github/awsmon-main-loop.svg" alt="Illustration of how AWSMON works" />
+</div>
 
 A reporter that implements the `Reporter` interface then takes these collected metrics and send them - in the case we're interested in (AWS), there's the `CloudWatchReporter`, which reports to `CloudWatch`.
 
